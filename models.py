@@ -7,6 +7,8 @@ from collections import Counter
 import numpy as np
 import random
 
+random.seed(42)
+
 class FeatureExtractor(object):
     """
     Feature extraction base type. Takes a sentence and returns an indexed list of features.
@@ -92,17 +94,14 @@ class PerceptronClassifier(SentimentClassifier):
     superclass. Hint: you'll probably need this class to wrap both the weight vector and featurizer -- feel free to
     modify the constructor to pass these in.
     """
-    def __init__(self, feature_extractor: FeatureExtractor, indexer: Indexer, num_features=None):
+    def __init__(self, feature_extractor: FeatureExtractor, indexer: Indexer):
         self.feature_extractor = feature_extractor
         self.indexer = indexer
-        if num_features is None:
-            self.num_features = len(indexer)
-        else:
-            self.num_features = num_features
-        self.weights = np.zeros(self.num_features)
+        self.weights = np.zeros(len(indexer))
 
     def predict(self, sentence: List[str]) -> int:
         features = self.feature_extractor.extract_features(sentence, add_to_indexer=False)
+        # Dot product of weights and features
         score = 0.0
         for idx, count in features.items():
             if idx < len(self.weights):
@@ -115,8 +114,8 @@ class PerceptronClassifier(SentimentClassifier):
         error = label - prediction
         for idx, count in features.items():
             if idx >= len(self.weights):
-                self.weights = np.append(self.weights, np.zeros(idx + 1 - len(self.weights) + 1))
-        self.weights[idx] += learning_rate * error * count
+                self.weights = np.append(self.weights, np.zeros(idx - len(self.weights) + 1))
+            self.weights[idx] += learning_rate * error * count
 
 
 class LogisticRegressionClassifier(SentimentClassifier):
