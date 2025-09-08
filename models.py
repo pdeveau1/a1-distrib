@@ -159,7 +159,7 @@ class LogisticRegressionClassifier(SentimentClassifier):
         for idx, count in features.items():
             if idx >= len(self.weights):
                 self.weights = np.append(self.weights, np.zeros(idx - len(self.weights) + 1))
-            self.weights[idx] += learning_rate * (error * count - 0.01 * self.weights[idx])  # L2 regularization
+            self.weights[idx] += learning_rate * (error * count - 0.001 * self.weights[idx])  # L2 regularization
 
 def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=5) -> PerceptronClassifier:
     """
@@ -187,7 +187,7 @@ def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureE
     return model
 
 
-def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=20, learning_rate: float=0.2) -> LogisticRegressionClassifier:
+def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=20, learning_rate: float=0.05) -> LogisticRegressionClassifier:
     """
     Train a logistic regression model.
     :param train_exs: training set, List of SentimentExample objects
