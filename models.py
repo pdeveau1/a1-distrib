@@ -148,6 +148,8 @@ def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureE
     # Training loop
     for epoch in range(num_epochs):
         print(f"Epoch {epoch + 1}/{num_epochs}")
+        print("Shuffling training data")
+        random.shuffle(train_exs)
         for ex in train_exs:
             model.update(ex.words, ex.label)
     return model
