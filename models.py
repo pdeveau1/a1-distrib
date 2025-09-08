@@ -6,6 +6,7 @@ from utils import *
 from collections import Counter
 import numpy as np
 import random
+import string
 
 random.seed(42)
 
@@ -45,11 +46,17 @@ class UnigramFeatureExtractor(FeatureExtractor):
         counter = Counter()
         # Iterate over each word in the sentence
         for word in sentence:
-            # Get the index of the word, adding it to the indexer if specified
-            idx = self.indexer.add_and_get_index(word.lower(), add=add_to_indexer)
-            # Only add to counter if the word is in the indexer
-            if idx != -1:
-                counter[idx] += 1
+            # Convert word to lowercase for case insensitivity
+            word = word.lower()
+            # Remove punctuation from the word
+            word = word.translate(str.maketrans('', '', string.punctuation))
+            # Skip punctiation and RRB/LRB tokens
+            if word != '' and word != 'rrb' and word != 'lrb':
+                # Get the index of the word, adding it to the indexer if specified
+                idx = self.indexer.add_and_get_index(word, add=add_to_indexer)
+                # Only add to counter if the word is in the indexer
+                if idx != -1:
+                    counter[idx] += 1
         return counter
 
 class BigramFeatureExtractor(FeatureExtractor):
