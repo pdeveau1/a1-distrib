@@ -187,7 +187,7 @@ def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureE
     return model
 
 
-def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=5, learning_rate: float=0.1) -> LogisticRegressionClassifier:
+def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=20, learning_rate: float=0.2) -> LogisticRegressionClassifier:
     """
     Train a logistic regression model.
     :param train_exs: training set, List of SentimentExample objects
