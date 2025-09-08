@@ -131,9 +131,35 @@ class LogisticRegressionClassifier(SentimentClassifier):
     superclass. Hint: you'll probably need this class to wrap both the weight vector and featurizer -- feel free to
     modify the constructor to pass these in.
     """
-    def __init__(self):
-        raise Exception("Must be implemented")
+    def __init__(self, feature_extractor: FeatureExtractor, indexer: Indexer):
+        self.feature_extractor = feature_extractor
+        self.indexer = indexer
+        self.weights = np.zeros(len(indexer))
 
+    def sigmoid(self, z: float) -> float:
+        return 1 / (1 + np.exp(-z))
+    
+    def predict_proba(self, sentence: List[str]) -> float:
+        features = self.feature_extractor.extract_features(sentence, add_to_indexer=False)
+        # Dot product of weights and features
+        score = 0.0
+        for idx, count in features.items():
+            if idx < len(self.weights):
+                score += self.weights[idx] * count
+        return self.sigmoid(score)
+    
+    def predict(self, sentence: List[str]) -> int:
+        prob = self.predict_proba(sentence)
+        return 1 if prob >= 0.5 else 0
+    
+    def update(self, sentence: List[str], label: int, learning_rate: float=0.1):
+        features = self.feature_extractor.extract_features(sentence, add_to_indexer=True)
+        prediction = self.predict(sentence)
+        error = label - prediction
+        for idx, count in features.items():
+            if idx >= len(self.weights):
+                self.weights = np.append(self.weights, np.zeros(idx - len(self.weights) + 1))
+            self.weights[idx] += learning_rate * error * count
 
 def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=5) -> PerceptronClassifier:
     """
@@ -161,14 +187,31 @@ def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureE
     return model
 
 
-def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor) -> LogisticRegressionClassifier:
+def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=5, learning_rate: float=0.1) -> LogisticRegressionClassifier:
     """
     Train a logistic regression model.
     :param train_exs: training set, List of SentimentExample objects
     :param feat_extractor: feature extractor to use
     :return: trained LogisticRegressionClassifier model
     """
-    raise Exception("Must be implemented")
+    print("Training with logistic regression")
+
+    # Build the indexer
+    for sentence in train_exs:
+        feat_extractor.extract_features(sentence.words, add_to_indexer=True)
+
+    # Initialize the logistic regression classifier
+    indexer = feat_extractor.get_indexer()
+    model = LogisticRegressionClassifier(feat_extractor, indexer)
+
+    # Training loop
+    for epoch in range(num_epochs):
+        print(f"Epoch {epoch + 1}/{num_epochs}")
+        print("Shuffling training data")
+        random.shuffle(train_exs)
+        for ex in train_exs:
+            model.update(ex.words, ex.label, learning_rate=learning_rate)
+    return model
 
 
 def train_model(args, train_exs: List[SentimentExample], dev_exs: List[SentimentExample]) -> SentimentClassifier:
