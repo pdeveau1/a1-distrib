@@ -4,6 +4,8 @@ from sentiment_data import *
 from utils import *
 
 from collections import Counter
+import numpy as np
+import random
 
 class FeatureExtractor(object):
     """
@@ -31,8 +33,22 @@ class UnigramFeatureExtractor(FeatureExtractor):
     and any additional preprocessing you want to do.
     """
     def __init__(self, indexer: Indexer):
-        raise Exception("Must be implemented")
+        self.indexer = indexer
 
+    def get_indexer(self):
+        return self.indexer
+    
+    def extract_features(self, sentence: List[str], add_to_indexer: bool=False) -> Counter:
+        # Create a counter to hold feature counts
+        counter = Counter()
+        # Iterate over each word in the sentence
+        for word in sentence:
+            # Get the index of the word, adding it to the indexer if specified
+            idx = self.indexer.add_and_get_index(word, add=add_to_indexer)
+            # Only add to counter if the word is in the indexer
+            if idx != -1:
+                counter[idx] += 1
+        return counter
 
 class BigramFeatureExtractor(FeatureExtractor):
     """
@@ -76,8 +92,31 @@ class PerceptronClassifier(SentimentClassifier):
     superclass. Hint: you'll probably need this class to wrap both the weight vector and featurizer -- feel free to
     modify the constructor to pass these in.
     """
-    def __init__(self):
-        raise Exception("Must be implemented")
+    def __init__(self, feature_extractor: FeatureExtractor, indexer: Indexer, num_features=None):
+        self.feature_extractor = feature_extractor
+        self.indexer = indexer
+        if num_features is None:
+            self.num_features = len(indexer)
+        else:
+            self.num_features = num_features
+        self.weights = np.zeros(self.num_features)
+
+    def predict(self, sentence: List[str]) -> int:
+        features = self.feature_extractor.extract_features(sentence, add_to_indexer=False)
+        score = 0.0
+        for idx, count in features.items():
+            if idx < len(self.weights):
+                score += self.weights[idx] * count
+        return 1 if score >= 0 else 0
+    
+    def update(self, sentence: List[str], label: int, learning_rate: float=1.0):
+        features = self.feature_extractor.extract_features(sentence, add_to_indexer=True)
+        prediction = self.predict(sentence)
+        error = label - prediction
+        for idx, count in features.items():
+            if idx >= len(self.weights):
+                self.weights = np.append(self.weights, np.zeros(idx + 1 - len(self.weights) + 1))
+        self.weights[idx] += learning_rate * error * count
 
 
 class LogisticRegressionClassifier(SentimentClassifier):
@@ -90,14 +129,28 @@ class LogisticRegressionClassifier(SentimentClassifier):
         raise Exception("Must be implemented")
 
 
-def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor) -> PerceptronClassifier:
+def train_perceptron(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor, num_epochs: int=5) -> PerceptronClassifier:
     """
     Train a classifier with the perceptron.
     :param train_exs: training set, List of SentimentExample objects
     :param feat_extractor: feature extractor to use
     :return: trained PerceptronClassifier model
     """
-    raise Exception("Must be implemented")
+    print("Training with perceptron")
+    # Build the indexer
+    for sentence in train_exs:
+        feat_extractor.extract_features(sentence.words, add_to_indexer=True)
+    
+    # Initialize the perceptron classifier
+    indexer = feat_extractor.get_indexer()
+    model = PerceptronClassifier(feat_extractor, indexer)
+
+    # Training loop
+    for epoch in range(num_epochs):
+        print(f"Epoch {epoch + 1}/{num_epochs}")
+        for ex in train_exs:
+            model.update(ex.words, ex.label)
+    return model
 
 
 def train_logistic_regression(train_exs: List[SentimentExample], feat_extractor: FeatureExtractor) -> LogisticRegressionClassifier:
