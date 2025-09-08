@@ -46,7 +46,7 @@ class UnigramFeatureExtractor(FeatureExtractor):
         # Iterate over each word in the sentence
         for word in sentence:
             # Get the index of the word, adding it to the indexer if specified
-            idx = self.indexer.add_and_get_index(word, add=add_to_indexer)
+            idx = self.indexer.add_and_get_index(word.lower(), add=add_to_indexer)
             # Only add to counter if the word is in the indexer
             if idx != -1:
                 counter[idx] += 1
